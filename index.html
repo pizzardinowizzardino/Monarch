@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Solo Leveling TTRPG Companion</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        slate: {
+                            850: '#111827',
+                            900: '#0f172a',
+                            950: '#070a13',
+                        },
+                        cyan: {
+                            400: '#22d3ee',
+                            500: '#06b6d4',
+                            900: '#164e63',
+                        },
+                        amber: {
+                            400: '#fbbf24',
+                            500: '#f59e0b',
+                            900: '#78350f',
+                        },
+                        purple: {
+                            400: '#c084fc',
+                            500: '#a855f7',
+                            900: '#581c87',
+                        }
+                    },
+                    boxShadow: {
+                        'neon-cyan': '0 0 15px rgba(34, 211, 238, 0.25)',
+                        'neon-amber': '0 0 15px rgba(251, 191, 36, 0.25)',
+                        'neon-purple': '0 0 15px rgba(192, 132, 252, 0.25)'
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Custom scrollbar for mobile panels */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+        /* Mobile touch tap highlight removal */
+        * {
+            -webkit-tap-highlight-color: transparent;
+        }
+        .card-glow-active {
+            box-shadow: 0 0 12px rgba(34, 211, 238, 0.3);
+            border-color: rgba(34, 211, 238, 0.6);
+        }
+        .card-glow-passive {
+            box-shadow: 0 0 12px rgba(192, 132, 252, 0.3);
+            border-color: rgba(192, 132, 252, 0.6);
+        }
+        .card-glow-relic {
+            box-shadow: 0 0 12px rgba(251, 191, 36, 0.3);
+            border-color: rgba(251, 191, 36, 0.6);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col select-none pb-16 md:pb-0">
+
+    <!-- Top Navigation Bar -->
+    <header class="bg-slate-900/90 backdrop-blur border-b border-slate-800 sticky top-0 z-40 px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="p-1.5 bg-cyan-950 border border-cyan-500/40 rounded-lg text-cyan-400">
+                <i data-lucide="shield-alert" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <h1 class="text-base font-bold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-indigo-400">
+                    MONARCH SYSTEM
+                </h1>
+                <p class="text-xs text-slate-400 flex items-center gap-1">
+                    <span id="current-player-display" class="text-cyan-300 font-medium">Player 1</span>
+                    <span class="text-slate-600">•</span>
+                    <span id="sync-status" class="text-emerald-400 flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Synced
+                    </span>
+                </p>
+            </div>
+        </div>
+
+        <!-- Identity Selector / GM Toggle -->
+        <div class="flex items-center space-x-2">
+            <select id="user-selector" onchange="switchUser(this.value)" class="bg-slate-850 text-slate-200 border border-slate-700 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-cyan-500">
+                <option value="p1">Player 1 (Sung)</option>
+                <option value="p2">Player 2 (Cha)</option>
+                <option value="p3">Player 3 (Baek)</option>
+                <option value="gm">👑 Game Master</option>
+            </select>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-4 md:p-6 grid grid-cols-1 gap-4">
+        
+
+        <!-- VIEW 1: CHARACTER SHEET -->
+        <section id="view-sheet" class="space-y-4">
+            
+            <!-- Character Overview & Stat Header -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 relative overflow-hidden">
+                <div class="absolute -right-8 -top-8 w-32 h-32 bg-cyan-500/5 rounded-full blur-2xl pointer-events-none"></div>
+                
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-3 border-b border-slate-800">
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <h2 id="char-name" class="text-xl font-bold text-white">Shadow Monarch</h2>
+                            <span id="char-rank" class="px-2 py-0.5 text-xs font-semibold bg-amber-950 text-amber-400 border border-amber-600/40 rounded">S-Rank</span>
+                        </div>
+                        <p id="char-title" class="text-xs text-slate-400">Title: Monarch of Shadows</p>
+                    </div>
+
+                    <div class="flex items-center gap-2 w-full sm:w-auto justify-between">
+                        <div class="text-right">
+                            <span class="text-xs text-slate-400">Level</span>
+                            <div id="char-level" class="text-lg font-bold text-cyan-400">24</div>
+                        </div>
+                        <div class="h-8 w-px bg-slate-800 hidden sm:block"></div>
+                        <button onclick="openStatEditModal()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg text-xs flex items-center gap-1">
+                            <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Edit Base Stats
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Vital Gauges -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                    <!-- HP Bar -->
+                    <div class="bg-slate-950/80 p-3 rounded-lg border border-slate-800/80">
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-red-400 font-semibold flex items-center gap-1"><i data-lucide="heart" class="w-3.5 h-3.5"></i> HP</span>
+                            <span id="hp-text" class="text-slate-300 font-mono">120 / 120</span>
+                        </div>
+                        <div class="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden">
+                            <div id="hp-bar" class="bg-gradient-to-r from-red-600 to-red-400 h-2.5 rounded-full transition-all duration-300" style="width: 100%"></div>
+                        </div>
+                        <div class="flex justify-end gap-1 mt-2">
+                            <button onclick="adjustResource('hp', -5)" class="px-2 py-0.5 bg-red-950/50 hover:bg-red-900 border border-red-800/50 rounded text-red-300 text-xs font-mono">-5</button>
+                            <button onclick="adjustResource('hp', 5)" class="px-2 py-0.5 bg-emerald-950/50 hover:bg-emerald-900 border border-emerald-800/50 rounded text-emerald-300 text-xs font-mono">+5</button>
+                        </div>
+                    </div>
+
+                    <!-- MP Bar -->
+                    <div class="bg-slate-950/80 p-3 rounded-lg border border-slate-800/80">
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-cyan-400 font-semibold flex items-center gap-1"><i data-lucide="zap" class="w-3.5 h-3.5"></i> MP</span>
+                            <span id="mp-text" class="text-slate-300 font-mono">85 / 85</span>
+                        </div>
+                        <div class="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden">
+                            <div id="mp-bar" class="bg-gradient-to-r from-cyan-600 to-cyan-400 h-2.5 rounded-full transition-all duration-300" style="width: 100%"></div>
+                        </div>
+                        <div class="flex justify-end gap-1 mt-2">
+                            <button onclick="adjustResource('mp', -5)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-cyan-300 text-xs font-mono">-5</button>
+                            <button onclick="adjustResource('mp', 5)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-cyan-300 text-xs font-mono">+5</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Primary Attributes Grid -->
+                <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5 mt-4">
+                    <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800 text-center">
+                        <span class="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Strength</span>
+                        <div id="stat-str" class="text-xl font-black text-amber-400 mt-0.5">18</div>
+                        <div id="bonus-str" class="text-[10px] text-emerald-400 font-mono min-h-[14px]"></div>
+                    </div>
+                    <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800 text-center">
+                        <span class="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Agility</span>
+                        <div id="stat-agi" class="text-xl font-black text-cyan-400 mt-0.5">22</div>
+                        <div id="bonus-agi" class="text-[10px] text-emerald-400 font-mono min-h-[14px]"></div>
+                    </div>
+                    <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800 text-center">
+                        <span class="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Perception</span>
+                        <div id="stat-per" class="text-xl font-black text-purple-400 mt-0.5">14</div>
+                        <div id="bonus-per" class="text-[10px] text-emerald-400 font-mono min-h-[14px]"></div>
+                    </div>
+                    <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800 text-center">
+                        <span class="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Vigor</span>
+                        <div id="stat-vig" class="text-xl font-black text-red-400 mt-0.5">16</div>
+                        <div id="bonus-vig" class="text-[10px] text-emerald-400 font-mono min-h-[14px]"></div>
+                    </div>
+                    <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800 text-center col-span-2 sm:col-span-1">
+                        <span class="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Intelligence</span>
+                        <div id="stat-int" class="text-xl font-black text-indigo-400 mt-0.5">15</div>
+                        <div id="bonus-int" class="text-[10px] text-emerald-400 font-mono min-h-[14px]"></div>
+                    </div>
+                </div>
+
+                <!-- Hamlet Passive Buff Indicator -->
+                <div id="hamlet-buffs-bar" class="mt-3 pt-2 border-t border-slate-800/60 text-xs text-slate-400 flex flex-wrap items-center gap-2">
+                    <span class="text-slate-500 flex items-center gap-1"><i data-lucide="castle" class="w-3.5 h-3.5"></i> Active Hamlet Buffs:</span>
+                    <span id="hamlet-buff-tags" class="flex flex-wrap gap-1.5">
+                        <!-- Populated by JS -->
+                    </span>
+                </div>
+            </div>
+
+            <!-- Equipped Skill Cards Section -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+                <div class="flex justify-between items-center mb-3">
+                    <div class="flex items-center space-x-2">
+                        <h3 class="font-bold text-slate-200 flex items-center gap-1.5">
+                            <i data-lucide="layers" class="w-4 h-4 text-cyan-400"></i> Equipped Ability Slots
+                        </h3>
+                        <span id="slot-capacity-badge" class="px-2 py-0.5 text-xs font-mono rounded bg-cyan-950 text-cyan-300 border border-cyan-800">
+                            0 / 5 Slots
+                        </span>
+                    </div>
+                    <span class="text-xs text-slate-400 hidden sm:inline">Tap card to Unequip</span>
+                </div>
+
+                <!-- Active Cards Grid -->
+                <div id="equipped-cards-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+            <!-- Stored Cards / Backpack Inventory -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="font-bold text-slate-200 flex items-center gap-1.5">
+                        <i data-lucide="briefcase" class="w-4 h-4 text-purple-400"></i> Card Inventory / Vault
+                    </h3>
+                    <span id="stored-count-badge" class="text-xs text-slate-400">0 Cards Stored</span>
+                </div>
+
+                <div id="stored-cards-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 2: SHARED DRAFT POOL -->
+        <section id="view-draft" class="space-y-4 hidden">
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4 pb-3 border-b border-slate-800">
+                    <div>
+                        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                            <i data-lucide="sparkles" class="w-5 h-5 text-amber-400"></i> Dungeon Loot Draft Pool
+                        </h2>
+                        <p class="text-xs text-slate-400">Claim cards for your player sheet. Claimed cards immediately disappear from this pool across all active screens.</p>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-slate-400">Available: <span id="draft-count-tag" class="text-amber-400 font-bold">0</span></span>
+                    </div>
+                </div>
+
+                <!-- Available Draft Cards Grid -->
+                <div id="draft-cards-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 3: HAMLET & BASE BUILDING -->
+        <section id="view-hamlet" class="space-y-4 hidden">
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+                <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-800">
+                    <div>
+                        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                            <i data-lucide="castle" class="w-5 h-5 text-indigo-400"></i> The Outpost Hamlet
+                        </h2>
+                        <p class="text-xs text-slate-400">Construct and upgrade buildings using expedition materials to grant global passive perks to all party members.</p>
+                    </div>
+                </div>
+
+                <!-- Buildings Grid -->
+                <div id="hamlet-buildings-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 4: GAME MASTER CONTROLS -->
+        <section id="view-gm" class="space-y-4 hidden">
+            <div class="bg-slate-900 border border-amber-500/30 rounded-xl p-4">
+                <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-800">
+                    <h2 class="text-lg font-bold text-amber-400 flex items-center gap-2">
+                        <i data-lucide="crown" class="w-5 h-5"></i> Game Master Overseer
+                    </h2>
+                    <span class="px-2 py-0.5 bg-amber-950 text-amber-300 text-xs border border-amber-700/50 rounded">Full Authority</span>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <!-- Inject Card into Draft Pool -->
+                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                        <h3 class="text-sm font-bold text-slate-200 mb-3 flex items-center gap-1.5">
+                            <i data-lucide="plus-circle" class="w-4 h-4 text-cyan-400"></i> Inject Custom Card to Draft Pool
+                        </h3>
+                        <form id="gm-add-card-form" onsubmit="gmCreateCard(event)" class="space-y-3">
+                            <div>
+                                <label class="text-xs text-slate-400 block mb-1">Card Title</label>
+                                <input type="text" id="gm-card-title" required placeholder="e.g. Shadow Step" class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-1.5 text-xs text-white focus:outline-none focus:border-cyan-500">
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="text-xs text-slate-400 block mb-1">Type</label>
+                                    <select id="gm-card-type" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-white">
+                                        <option value="Active">Active Skill</option>
+                                        <option value="Passive">Passive Trait</option>
+                                        <option value="Relic">Magic Relic</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-xs text-slate-400 block mb-1">Scaling Stat</label>
+                                    <select id="gm-card-stat" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-white">
+                                        <option value="Agility">Agility</option>
+                                        <option value="Strength">Strength</option>
+                                        <option value="Perception">Perception</option>
+                                        <option value="Vigor">Vigor</option>
+                                        <option value="Intelligence">Intelligence</option>
+                                        <option value="None">None</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="text-xs text-slate-400 block mb-1">Cost / Cooldown</label>
+                                    <input type="text" id="gm-card-cost" placeholder="e.g. 15 MP | 2 turns" class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-1.5 text-xs text-white">
+                                </div>
+                                <div>
+                                    <label class="text-xs text-slate-400 block mb-1">Stat Bonus (e.g. AGI:+2)</label>
+                                    <input type="text" id="gm-card-bonus" placeholder="e.g. AGI:+2, STR:+1" class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-1.5 text-xs text-white">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-xs text-slate-400 block mb-1">Card Description & Effect</label>
+                                <textarea id="gm-card-desc" rows="2" required placeholder="Instantly teleport behind a enemy target..." class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-1.5 text-xs text-white focus:outline-none focus:border-cyan-500"></textarea>
+                            </div>
+                            <button type="submit" class="w-full py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-xs rounded-lg transition-colors">
+                                Add Card to Shared Draft Pool
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Quick Batch Actions -->
+                    <div class="space-y-4">
+                        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                            <h3 class="text-sm font-bold text-slate-200 mb-2 flex items-center gap-1.5">
+                                <i data-lucide="refresh-cw" class="w-4 h-4 text-amber-400"></i> Draft Generator & Presets
+                            </h3>
+                            <p class="text-xs text-slate-400 mb-3">Instantly populate the draft pool with a random selection of dungeon rewards.</p>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button onclick="gmGeneratePresetDraft('E-Rank')" class="py-2 bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 border border-slate-700 rounded">
+                                    Generate Low Dungeon Draft (6 Cards)
+                                </button>
+                                <button onclick="gmGeneratePresetDraft('S-Rank')" class="py-2 bg-slate-800 hover:bg-slate-700 text-xs text-amber-300 border border-slate-700 rounded">
+                                    Generate Boss Raid Draft (9 Cards)
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                            <h3 class="text-sm font-bold text-red-400 mb-2 flex items-center gap-1.5">
+                                <i data-lucide="alert-triangle" class="w-4 h-4"></i> Danger Zone
+                            </h3>
+                            <div class="flex gap-2">
+                                <button onclick="gmClearDraftPool()" class="flex-1 py-2 bg-red-950/60 hover:bg-red-900 text-red-200 text-xs border border-red-800 rounded">
+                                    Clear Current Draft Pool
+                                </button>
+                                <button onclick="resetFullApplicationData()" class="flex-1 py-2 bg-red-950/90 hover:bg-red-800 text-red-100 text-xs font-bold border border-red-700 rounded">
+                                    Reset All Campaign Data
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Mobile Fixed Bottom Navigation Bar -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur border-t border-slate-800 z-50 px-2 py-1.5 flex justify-around items-center">
+        <button onclick="setActiveTab('sheet')" id="tab-btn-sheet" class="flex flex-col items-center p-1.5 text-cyan-400">
+            <i data-lucide="user" class="w-5 h-5"></i>
+            <span class="text-[10px] font-medium mt-0.5">Sheet</span>
+        </button>
+        <button onclick="setActiveTab('draft')" id="tab-btn-draft" class="flex flex-col items-center p-1.5 text-slate-400 hover:text-slate-200 relative">
+            <i data-lucide="sparkles" class="w-5 h-5"></i>
+            <span class="text-[10px] font-medium mt-0.5">Draft Pool</span>
+            <span id="draft-badge" class="absolute top-1 right-3 w-2 h-2 bg-amber-400 rounded-full hidden"></span>
+        </button>
+        <button onclick="setActiveTab('hamlet')" id="tab-btn-hamlet" class="flex flex-col items-center p-1.5 text-slate-400 hover:text-slate-200">
+            <i data-lucide="castle" class="w-5 h-5"></i>
+            <span class="text-[10px] font-medium mt-0.5">Hamlet</span>
+        </button>
+        <button onclick="setActiveTab('gm')" id="tab-btn-gm" class="flex flex-col items-center p-1.5 text-slate-400 hover:text-slate-200">
+            <i data-lucide="crown" class="w-5 h-5"></i>
+            <span class="text-[10px] font-medium mt-0.5">GM Tools</span>
+        </button>
+    </nav>
+
+    <!-- EDIT BASE STATS MODAL -->
+    <div id="modal-edit-stats" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 w-full max-w-md space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                <h3 class="font-bold text-white text-base">Edit Base Attributes</h3>
+                <button onclick="closeStatEditModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="space-y-3">
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-xs text-slate-400 block">Name</label>
+                        <input type="text" id="edit-char-name" class="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1 text-xs text-white">
+                    </div>
+                    <div>
+                        <label class="text-xs text-slate-400 block">Title</label>
+                        <input type="text" id="edit-char-title" class="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1 text-xs text-white">
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <div>
+                        <label class="text-xs text-slate-400 block">Level</label>
+                        <input type="number" id="edit-char-level" class="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1 text-xs text-white">
+                    </div>
+                    <div>
+                        <label class="text-xs text-slate-400 block">Max HP</label>
+                        <input type="number" id="edit-char-maxhp" class="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1 text-xs text-white">
+                    </div>
+                    <div>
+                        <label class="text-xs text-slate-400 block">Max MP</label>
+                        <input type="number" id="edit-char-maxmp" class="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1 text-xs text-white">
+                    </div>
+                </div>
+                <hr class="border-slate-800">
+                <div class="grid grid-cols-3 gap-2">
+                    <div>
+                        <label class="text-xs text-amber-400 font-bold block">STR</label>
+                        <input type="number" id="edit-stat-str" class="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1 text-xs text-white">
+                    </div>
+                    <div>
+                        <label class="text-xs text-cyan-400 font-bold block">AGI</label>
+                        <input type="number" id="edit-stat-agi" class="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1 text-xs text-white">
+                    </div>
+                    <div>
+                        <label class="text-xs text-purple-400 font-bold block">PER</label>
+                        <input type="number" id="edit-stat-per" class="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1 text-xs text-white">
+                    </div>
+                    <div>
+                        <label class="text-xs text-red-400 font-bold block">VIG</label>
+                        <input type="number" id="edit-stat-vig" class="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1 text-xs text-white">
+                    </div>
+                    <div>
+                        <label class="text-xs text-indigo-400 font-bold block">INT</label>
+                        <input type="number" id="edit-stat-int" class="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1 text-xs text-white">
+                    </div>
+                    <div>
+                        <label class="text-xs text-cyan-300 font-bold block">Active Slots</label>
+                        <input type="number" id="edit-char-slots" class="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1 text-xs text-white">
+                    </div>
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+                <button onclick="closeStatEditModal()" class="px-3 py-1.5 bg-slate-800 text-xs text-slate-300 rounded">Cancel</button>
+                <button onclick="saveStatEditModal()" class="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-xs text-white font-bold rounded">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        
+        // Broadcast Channel for live tab sync
+        const syncChannel = new BroadcastChannel('solo_leveling_ttrpg_channel');
+
+        // Application Global State
+        let appState = {
+            activeUser: 'p1', // 'p1', 'p2', 'p3', 'gm'
+            players: {
+                p1: {
+                    name: 'Sung Jin-Woo',
+                    rank: 'S-Rank',
+                    title: 'Monarch of Shadows',
+                    level: 28,
+                    hp: 140,
+                    maxHp: 140,
+                    mp: 95,
+                    maxMp: 95,
+                    baseSlots: 5,
+                    stats: { str: 20, agi: 24, per: 16, vig: 18, int: 18 },
+                    equippedCards: ['c1', 'c2'],
+                    storedCards: ['c3']
+                },
+                p2: {
+                    name: 'Cha Hae-In',
+                    rank: 'S-Rank',
+                    title: 'Sword Master',
+                    level: 25,
+                    hp: 110,
+                    maxHp: 110,
+                    mp: 60,
+                    maxMp: 60,
+                    baseSlots: 4,
+                    stats: { str: 22, agi: 26, per: 18, vig: 14, int: 12 },
+                    equippedCards: ['c4'],
+                    storedCards: []
+                },
+                p3: {
+                    name: 'Baek Yoon-Ho',
+                    rank: 'A-Rank',
+                    title: 'White Tiger',
+                    level: 22,
+                    hp: 160,
+                    maxHp: 160,
+                    mp: 40,
+                    maxMp: 40,
+                    baseSlots: 4,
+                    stats: { str: 25, agi: 16, per: 14, vig: 22, int: 10 },
+                    equippedCards: [],
+                    storedCards: []
+                }
+            },
+            // Master Card Database
+            cards: {
+                'c1': {
+                    id: 'c1',
+                    title: 'Shadow Mutilate',
+                    type: 'Active',
+                    cost: '20 MP | 1 turn CD',
+                    stat: 'Agility',
+                    bonus: 'AGI:+2',
+                    desc: 'Instantly strike target 3 times from shadow stealth. Scales with Agility.'
+                },
+                'c2': {
+                    id: 'c2',
+                    title: 'Monarch Passive: Swift Instinct',
+                    type: 'Passive',
+                    cost: 'Passive',
+                    stat: 'Agility',
+                    bonus: 'AGI:+3, PER:+1',
+                    desc: 'Enhances reaction speed. Grants +3 Agility and +1 Perception.'
+                },
+                'c3': {
+                    id: 'c3',
+                    title: 'Kasaka\'s Venom Dagger',
+                    type: 'Relic',
+                    cost: 'Equipped Item',
+                    stat: 'Strength',
+                    bonus: 'STR:+2',
+                    desc: 'Attacks have a 30% chance to cause Paralysis and Bleed.'
+                },
+                'c4': {
+                    id: 'c4',
+                    title: 'Sword Dance: Crescent',
+                    type: 'Active',
+                    cost: '15 MP | No CD',
+                    stat: 'Agility',
+                    bonus: 'AGI:+1',
+                    desc: 'Unleashes a arc blade wave dealing physical slice damage.'
+                }
+            },
+            // Available Shared Draft Pool
+            draftPool: ['c5', 'c6', 'c7', 'c8', 'c9'],
+            // Hamlet Base Buildings
+            hamlet: {
+                blacksmith: { level: 1, maxLevel: 3, title: 'Blacksmith Forge', perk: '+1 STR to all characters', statBonus: 'STR:+1' },
+                alchemy: { level: 1, maxLevel: 3, title: 'Alchemy Lab', perk: '+15 Max MP to all characters', mpBonus: 15 },
+                training: { level: 0, maxLevel: 3, title: 'Training Ground', perk: '+1 Ability Slot Capacity to all', slotBonus: 1 },
+                guildhall: { level: 0, maxLevel: 3, title: 'Guild Headquarters', perk: '+20 Max HP to all characters', hpBonus: 20 }
+            }
+        };
+
+        // Preset cards pool for GM generation
+        const samplePresetCards = [
+            { title: 'Ruler\'s Authority', type: 'Active', cost: '25 MP', stat: 'Intelligence', bonus: 'INT:+3', desc: 'Control physical objects telekinetically without touching them.' },
+            { title: 'Bloodlust Aura', type: 'Active', cost: '15 MP', stat: 'Perception', bonus: 'PER:+2', desc: 'Intimidate enemies within 10 meters, inflicting Fear and lowering armor.' },
+            { title: 'Dragon Armor Scale', type: 'Relic', cost: 'Equipped Item', stat: 'Vigor', bonus: 'VIG:+4', desc: 'Reduces all incoming elemental damage by 20%.' },
+            { title: 'Stealth Camouflage', type: 'Active', cost: '10 MP', stat: 'Agility', bonus: 'AGI:+2', desc: 'Erase presence and sound completely for 3 turns or until attacking.' },
+            { title: 'Vitality Elixir', type: 'Passive', cost: 'Passive', stat: 'Vigor', bonus: 'VIG:+2, HP:+15', desc: 'Permanently increases natural health regeneration and max HP.' },
+            { title: 'Quicksand Trap', type: 'Active', cost: '12 MP', stat: 'Intelligence', bonus: 'INT:+1', desc: 'Turns ground beneath enemies into sinking sand.' }
+        ];
+
+        window.onload = function() {
+            loadPersistedState();
+            setupBroadcastSync();
+            lucide.createIcons();
+            renderAllViews();
+        };
+
+        function saveStateAndSync() {
+            localStorage.setItem('solo_ttrpg_state', JSON.stringify(appState));
+            syncChannel.postMessage({ type: 'STATE_UPDATE', payload: appState });
+            renderAllViews();
+        }
+
+        function loadPersistedState() {
+            const saved = localStorage.getItem('solo_ttrpg_state');
+            if (saved) {
+                try {
+                    appState = JSON.parse(saved);
+                } catch(e) {
+                    console.error("Failed to parse local state", e);
+                }
+            }
+        }
+
+        function setupBroadcastSync() {
+            syncChannel.onmessage = (event) => {
+                if (event.data && event.data.type === 'STATE_UPDATE') {
+                    appState = event.data.payload;
+                    renderAllViews();
+                    showSyncNotification();
+                }
+            };
+        }
+
+        function showSyncNotification() {
+            const statusEl = document.getElementById('sync-status');
+            statusEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping"></span> Live Updated`;
+            setTimeout(() => {
+                statusEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Synced`;
+            }, 1500);
+        }
+
+        function setActiveTab(tab) {
+            ['sheet', 'draft', 'hamlet', 'gm'].forEach(t => {
+                const view = document.getElementById(`view-${t}`);
+                const btn = document.getElementById(`tab-btn-${t}`);
+                if (t === tab) {
+                    view.classList.remove('hidden');
+                    btn.className = 'flex flex-col items-center p-1.5 text-cyan-400 font-bold';
+                } else {
+                    view.classList.add('hidden');
+                    btn.className = 'flex flex-col items-center p-1.5 text-slate-400 hover:text-slate-200';
+                }
+            });
+        }
+
+        function switchUser(userId) {
+            appState.activeUser = userId;
+            const userNames = { p1: 'Sung Jin-Woo', p2: 'Cha Hae-In', p3: 'Baek Yoon-Ho', gm: 'Game Master' };
+            document.getElementById('current-player-display').innerText = userNames[userId] || 'Player';
+            
+            if (userId === 'gm') {
+                setActiveTab('gm');
+            } else {
+                setActiveTab('sheet');
+            }
+            renderAllViews();
+        }
+
+        function getCalculatedPlayerStats(playerId) {
+            const player = appState.players[playerId];
+            if (!player) return null;
+
+            // Base stats clone
+            let finalStats = { ...player.stats };
+            let maxHpBonus = 0;
+            let maxMpBonus = 0;
+            let extraSlots = 0;
+            let activeBuffs = [];
+
+            // 1. Calculate Hamlet Bonuses
+            if (appState.hamlet.blacksmith.level > 0) {
+                const bonus = appState.hamlet.blacksmith.level;
+                finalStats.str += bonus;
+                activeBuffs.push(`Blacksmith (+${bonus} STR)`);
+            }
+            if (appState.hamlet.alchemy.level > 0) {
+                const mpAdd = appState.hamlet.alchemy.level * 15;
+                maxMpBonus += mpAdd;
+                activeBuffs.push(`Alchemy Lab (+${mpAdd} MP)`);
+            }
+            if (appState.hamlet.training.level > 0) {
+                const slotAdd = appState.hamlet.training.level;
+                extraSlots += slotAdd;
+                activeBuffs.push(`Training Field (+${slotAdd} Slot)`);
+            }
+            if (appState.hamlet.guildhall.level > 0) {
+                const hpAdd = appState.hamlet.guildhall.level * 20;
+                maxHpBonus += hpAdd;
+                activeBuffs.push(`Guild Hall (+${hpAdd} HP)`);
+            }
+
+            // 2. Calculate Bonuses from Equipped Cards
+            const allEquipped = player.equippedCards.map(id => appState.cards[id]).filter(Boolean);
+            allEquipped.forEach(card => {
+                if (card.bonus) {
+                    const parts = card.bonus.split(',');
+                    parts.forEach(part => {
+                        const [st, val] = part.trim().split(':');
+                        const num = parseInt(val) || 0;
+                        if (st === 'STR') finalStats.str += num;
+                        if (st === 'AGI') finalStats.agi += num;
+                        if (st === 'PER') finalStats.per += num;
+                        if (st === 'VIG') finalStats.vig += num;
+                        if (st === 'INT') finalStats.int += num;
+                        if (st === 'HP') maxHpBonus += num;
+                        if (st === 'MP') maxMpBonus += num;
+                    });
+                }
+            });
+
+            return {
+                finalStats,
+                maxHp: player.maxHp + maxHpBonus,
+                maxMp: player.maxMp + maxMpBonus,
+                maxSlots: player.baseSlots + extraSlots,
+                activeBuffs
+            };
+        }
+
+        function renderAllViews() {
+            renderCharacterSheet();
+            renderDraftPool();
+            renderHamlet();
+            lucide.createIcons();
+        }
+
+        function renderCharacterSheet() {
+            if (appState.activeUser === 'gm') {
+                // GM View mode defaults to P1 for sheet preview
+                renderSheetForPlayer('p1');
+                return;
+            }
+            renderSheetForPlayer(appState.activeUser);
+        }
+
+        function renderSheetForPlayer(playerId) {
+            const player = appState.players[playerId];
+            if (!player) return;
+
+            const calc = getCalculatedPlayerStats(playerId);
+
+            // Set Profile
+            document.getElementById('char-name').innerText = player.name;
+            document.getElementById('char-rank').innerText = player.rank;
+            document.getElementById('char-title').innerText = `Title: ${player.title}`;
+            document.getElementById('char-level').innerText = player.level;
+
+            // Set Health & Mana
+            document.getElementById('hp-text').innerText = `${player.hp} / ${calc.maxHp}`;
+            document.getElementById('hp-bar').style.width = `${Math.min(100, Math.max(0, (player.hp / calc.maxHp) * 100))}%`;
+            
+            document.getElementById('mp-text').innerText = `${player.mp} / ${calc.maxMp}`;
+            document.getElementById('mp-bar').style.width = `${Math.min(100, Math.max(0, (player.mp / calc.maxMp) * 100))}%`;
+
+            // Render Base Stats
+            document.getElementById('stat-str').innerText = calc.finalStats.str;
+            document.getElementById('bonus-str').innerText = (calc.finalStats.str > player.stats.str) ? `(+${calc.finalStats.str - player.stats.str})` : '';
+
+            document.getElementById('stat-agi').innerText = calc.finalStats.agi;
+            document.getElementById('bonus-agi').innerText = (calc.finalStats.agi > player.stats.agi) ? `(+${calc.finalStats.agi - player.stats.agi})` : '';
+
+            document.getElementById('stat-per').innerText = calc.finalStats.per;
+            document.getElementById('bonus-per').innerText = (calc.finalStats.per > player.stats.per) ? `(+${calc.finalStats.per - player.stats.per})` : '';
+
+            document.getElementById('stat-vig').innerText = calc.finalStats.vig;
+            document.getElementById('bonus-vig').innerText = (calc.finalStats.vig > player.stats.vig) ? `(+${calc.finalStats.vig - player.stats.vig})` : '';
+
+            document.getElementById('stat-int').innerText = calc.finalStats.int;
+            document.getElementById('bonus-int').innerText = (calc.finalStats.int > player.stats.int) ? `(+${calc.finalStats.int - player.stats.int})` : '';
+
+            // Render Active Buff Tags
+            const buffTagContainer = document.getElementById('hamlet-buff-tags');
+            if (calc.activeBuffs.length === 0) {
+                buffTagContainer.innerHTML = `<span class="italic text-slate-600">None active</span>`;
+            } else {
+                buffTagContainer.innerHTML = calc.activeBuffs.map(b => 
+                    `<span class="px-2 py-0.5 bg-indigo-950/80 text-indigo-300 border border-indigo-800/60 rounded text-[10px] font-mono">${b}</span>`
+                ).join('');
+            }
+
+            // Slot Capacity Badge
+            const equippedCount = player.equippedCards.length;
+            const slotBadge = document.getElementById('slot-capacity-badge');
+            slotBadge.innerText = `${equippedCount} / ${calc.maxSlots} Slots`;
+            if (equippedCount >= calc.maxSlots) {
+                slotBadge.className = "px-2 py-0.5 text-xs font-mono rounded bg-amber-950 text-amber-300 border border-amber-800";
+            } else {
+                slotBadge.className = "px-2 py-0.5 text-xs font-mono rounded bg-cyan-950 text-cyan-300 border border-cyan-800";
+            }
+
+            // Render Equipped Cards
+            const equippedGrid = document.getElementById('equipped-cards-grid');
+            if (player.equippedCards.length === 0) {
+                equippedGrid.innerHTML = `<div class="col-span-full p-4 border border-dashed border-slate-800 rounded-lg text-center text-xs text-slate-500">No ability cards equipped. Tap a card in your inventory below to equip.</div>`;
+            } else {
+                equippedGrid.innerHTML = player.equippedCards.map(cardId => {
+                    const card = appState.cards[cardId];
+                    if (!card) return '';
+                    return createCardHTML(card, 'unequip', playerId);
+                }).join('');
+            }
+
+            // Render Stored Cards
+            const storedGrid = document.getElementById('stored-cards-grid');
+            document.getElementById('stored-count-badge').innerText = `${player.storedCards.length} Cards in Inventory`;
+            if (player.storedCards.length === 0) {
+                storedGrid.innerHTML = `<div class="col-span-full p-4 border border-dashed border-slate-800 rounded-lg text-center text-xs text-slate-500">Inventory empty. Claim new abilities from the shared Draft Pool!</div>`;
+            } else {
+                storedGrid.innerHTML = player.storedCards.map(cardId => {
+                    const card = appState.cards[cardId];
+                    if (!card) return '';
+                    return createCardHTML(card, 'equip', playerId);
+                }).join('');
+            }
+        }
+
+        function createCardHTML(card, actionType, playerId) {
+            let glowClass = "card-glow-active";
+            let typeColor = "text-cyan-400 bg-cyan-950 border-cyan-800";
+            if (card.type === 'Passive') {
+                glowClass = "card-glow-passive";
+                typeColor = "text-purple-400 bg-purple-950 border-purple-800";
+            } else if (card.type === 'Relic') {
+                glowClass = "card-glow-relic";
+                typeColor = "text-amber-400 bg-amber-950 border-amber-800";
+            }
+
+            let buttonHTML = '';
+            if (actionType === 'equip') {
+                buttonHTML = `<button onclick="equipCard('${playerId}', '${card.id}')" class="w-full mt-3 py-1.5 bg-cyan-950 hover:bg-cyan-900 border border-cyan-700/60 text-cyan-300 font-semibold text-xs rounded transition-colors flex items-center justify-center gap-1">
+                                <i data-lucide="arrow-up-circle" class="w-3.5 h-3.5"></i> Equip Card
+                              </button>`;
+            } else if (actionType === 'unequip') {
+                buttonHTML = `<button onclick="unequipCard('${playerId}', '${card.id}')" class="w-full mt-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs rounded transition-colors flex items-center justify-center gap-1">
+                                <i data-lucide="arrow-down-circle" class="w-3.5 h-3.5"></i> Unequip to Storage
+                              </button>`;
+            } else if (actionType === 'draft') {
+                buttonHTML = `<button onclick="claimDraftCard('${card.id}')" class="w-full mt-3 py-2 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-bold text-xs rounded transition-all shadow-neon-amber flex items-center justify-center gap-1">
+                                <i data-lucide="check-circle-2" class="w-4 h-4"></i> Claim / Draft Card
+                              </button>`;
+            }
+
+            return `
+                <div class="bg-slate-950 border border-slate-800 rounded-xl p-3.5 flex flex-col justify-between relative ${glowClass} transition-all">
+                    <div>
+                        <div class="flex justify-between items-start gap-2 mb-1.5">
+                            <h4 class="font-bold text-sm text-white leading-tight">${card.title}</h4>
+                            <span class="px-2 py-0.5 text-[10px] uppercase tracking-wider font-semibold border rounded ${typeColor}">
+                                ${card.type}
+                            </span>
+                        </div>
+                        
+                        <div class="text-[11px] text-slate-400 space-y-1 mb-2">
+                            <div class="flex justify-between">
+                                <span class="text-slate-500">Cost:</span>
+                                <span class="font-mono text-cyan-300">${card.cost || 'Free'}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-500">Scaling:</span>
+                                <span class="font-semibold text-amber-400">${card.stat || 'None'}</span>
+                            </div>
+                            ${card.bonus ? `
+                            <div class="flex justify-between">
+                                <span class="text-slate-500">Stat Bonus:</span>
+                                <span class="font-mono text-emerald-400">${card.bonus}</span>
+                            </div>` : ''}
+                        </div>
+
+                        <p class="text-xs text-slate-300 border-t border-slate-800/80 pt-2 leading-relaxed">
+                            ${card.desc}
+                        </p>
+                    </div>
+                    ${buttonHTML}
+                </div>
+            `;
+        }
+
+        function renderDraftPool() {
+            const grid = document.getElementById('draft-cards-grid');
+            const draftBadge = document.getElementById('draft-badge');
+            const countTag = document.getElementById('draft-count-tag');
+
+            countTag.innerText = appState.draftPool.length;
+
+            if (appState.draftPool.length > 0) {
+                draftBadge.classList.remove('hidden');
+            } else {
+                draftBadge.classList.add('hidden');
+            }
+
+            if (appState.draftPool.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full p-8 border border-dashed border-slate-800 rounded-xl text-center space-y-2">
+                        <i data-lucide="inbox" class="w-8 h-8 text-slate-600 mx-auto"></i>
+                        <p class="text-sm font-semibold text-slate-400">The Draft Pool is currently empty.</p>
+                        <p class="text-xs text-slate-500">The Game Master can generate new dungeon rewards from the GM Control panel.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = appState.draftPool.map(cardId => {
+                const card = appState.cards[cardId];
+                if (!card) return '';
+                return createCardHTML(card, 'draft', appState.activeUser);
+            }).join('');
+        }
+
+        function claimDraftCard(cardId) {
+            if (appState.activeUser === 'gm') {
+                alert("Game Master cannot claim cards for themselves. Switch to a Player profile first!");
+                return;
+            }
+
+            const player = appState.players[appState.activeUser];
+            if (!player) return;
+
+            // Remove from draft pool
+            appState.draftPool = appState.draftPool.filter(id => id !== cardId);
+
+            // Add to player stored cards
+            player.storedCards.push(cardId);
+
+            saveStateAndSync();
+        }
+
+        function equipCard(playerId, cardId) {
+            const player = appState.players[playerId];
+            if (!player) return;
+
+            const calc = getCalculatedPlayerStats(playerId);
+
+            if (player.equippedCards.length >= calc.maxSlots) {
+                alert(`Cannot equip card! Maximum ability slot capacity (${calc.maxSlots}) reached.`);
+                return;
+            }
+
+            // Move card from stored to equipped
+            player.storedCards = player.storedCards.filter(id => id !== cardId);
+            player.equippedCards.push(cardId);
+
+            saveStateAndSync();
+        }
+
+        function unequipCard(playerId, cardId) {
+            const player = appState.players[playerId];
+            if (!player) return;
+
+            player.equippedCards = player.equippedCards.filter(id => id !== cardId);
+            player.storedCards.push(cardId);
+
+            saveStateAndSync();
+        }
+
+        function renderHamlet() {
+            const grid = document.getElementById('hamlet-buildings-grid');
+            grid.innerHTML = Object.keys(appState.hamlet).map(key => {
+                const b = appState.hamlet[key];
+                const isMax = b.level >= b.maxLevel;
+                return `
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <h3 class="font-bold text-white text-base">${b.title}</h3>
+                                <span class="px-2 py-0.5 text-xs font-mono bg-indigo-950 text-indigo-300 border border-indigo-800 rounded">
+                                    Tier ${b.level} / ${b.maxLevel}
+                                </span>
+                            </div>
+                            <p class="text-xs text-slate-300 mb-3 leading-relaxed">
+                                <strong class="text-emerald-400">Current Perk:</strong> ${b.perk}
+                            </p>
+                        </div>
+                        <button onclick="upgradeBuilding('${key}')" ${isMax ? 'disabled' : ''} class="w-full py-2 ${isMax ? 'bg-slate-800 text-slate-500 border-slate-700' : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-neon-purple'} font-semibold text-xs rounded transition-all flex items-center justify-center gap-1">
+                            <i data-lucide="arrow-up-right" class="w-4 h-4"></i> ${isMax ? 'Fully Upgraded' : 'Upgrade Structure Level'}
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function upgradeBuilding(key) {
+            const b = appState.hamlet[key];
+            if (b && b.level < b.maxLevel) {
+                b.level += 1;
+                saveStateAndSync();
+            }
+        }
+
+        function adjustResource(type, amount) {
+            const player = appState.players[appState.activeUser];
+            if (!player) return;
+
+            const calc = getCalculatedPlayerStats(appState.activeUser);
+
+            if (type === 'hp') {
+                player.hp = Math.min(calc.maxHp, Math.max(0, player.hp + amount));
+            } else if (type === 'mp') {
+                player.mp = Math.min(calc.maxMp, Math.max(0, player.mp + amount));
+            }
+
+            saveStateAndSync();
+        }
+
+        function openStatEditModal() {
+            const player = appState.players[appState.activeUser];
+            if (!player) return;
+
+            document.getElementById('edit-char-name').value = player.name;
+            document.getElementById('edit-char-title').value = player.title;
+            document.getElementById('edit-char-level').value = player.level;
+            document.getElementById('edit-char-maxhp').value = player.maxHp;
+            document.getElementById('edit-char-maxmp').value = player.maxMp;
+            document.getElementById('edit-char-slots').value = player.baseSlots;
+
+            document.getElementById('edit-stat-str').value = player.stats.str;
+            document.getElementById('edit-stat-agi').value = player.stats.agi;
+            document.getElementById('edit-stat-per').value = player.stats.per;
+            document.getElementById('edit-stat-vig').value = player.stats.vig;
+            document.getElementById('edit-stat-int').value = player.stats.int;
+
+            document.getElementById('modal-edit-stats').classList.remove('hidden');
+        }
+
+        function closeStatEditModal() {
+            document.getElementById('modal-edit-stats').classList.add('hidden');
+        }
+
+        function saveStatEditModal() {
+            const player = appState.players[appState.activeUser];
+            if (!player) return;
+
+            player.name = document.getElementById('edit-char-name').value;
+            player.title = document.getElementById('edit-char-title').value;
+            player.level = parseInt(document.getElementById('edit-char-level').value) || 1;
+            player.maxHp = parseInt(document.getElementById('edit-char-maxhp').value) || 100;
+            player.maxMp = parseInt(document.getElementById('edit-char-maxmp').value) || 50;
+            player.baseSlots = parseInt(document.getElementById('edit-char-slots').value) || 4;
+
+            player.stats.str = parseInt(document.getElementById('edit-stat-str').value) || 10;
+            player.stats.agi = parseInt(document.getElementById('edit-stat-agi').value) || 10;
+            player.stats.per = parseInt(document.getElementById('edit-stat-per').value) || 10;
+            player.stats.vig = parseInt(document.getElementById('edit-stat-vig').value) || 10;
+            player.stats.int = parseInt(document.getElementById('edit-stat-int').value) || 10;
+
+            closeStatEditModal();
+            saveStateAndSync();
+        }
+
+        function gmCreateCard(e) {
+            e.preventDefault();
+            const id = 'c_' + Date.now();
+            const newCard = {
+                id,
+                title: document.getElementById('gm-card-title').value,
+                type: document.getElementById('gm-card-type').value,
+                stat: document.getElementById('gm-card-stat').value,
+                cost: document.getElementById('gm-card-cost').value || 'Free',
+                bonus: document.getElementById('gm-card-bonus').value || '',
+                desc: document.getElementById('gm-card-desc').value
+            };
+
+            appState.cards[id] = newCard;
+            appState.draftPool.push(id);
+
+            document.getElementById('gm-add-card-form').reset();
+            saveStateAndSync();
+            setActiveTab('draft');
+        }
+
+        function gmGeneratePresetDraft(rank) {
+            const count = rank === 'E-Rank' ? 6 : 9;
+            for (let i = 0; i < count; i++) {
+                const template = samplePresetCards[Math.floor(Math.random() * samplePresetCards.length)];
+                const id = 'c_gen_' + Date.now() + '_' + i;
+                appState.cards[id] = { ...template, id, title: `${template.title} [${rank}]` };
+                appState.draftPool.push(id);
+            }
+            saveStateAndSync();
+            setActiveTab('draft');
+        }
+
+        function gmClearDraftPool() {
+            if (confirm("Are you sure you want to clear all unclaimed cards from the draft pool?")) {
+                appState.draftPool = [];
+                saveStateAndSync();
+            }
+        }
+
+        function resetFullApplicationData() {
+            if (confirm("WARNING: Reset all player statistics, Hamlet upgrades, and card inventories?")) {
+                localStorage.removeItem('solo_ttrpg_state');
+                location.reload();
+            }
+        }
+    </script>
+</body>
+</html>
